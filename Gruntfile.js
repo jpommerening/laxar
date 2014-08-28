@@ -65,7 +65,7 @@ module.exports = function (grunt) {
          parts.shift();
          parts.pop();
          if( index === 0 ) {
-            parts.unshift( '<?xml version="1.0" encoding="utf-8">\n<testsuites>' );
+            parts.unshift( '<?xml version="1.0" encoding="utf-8"?>\n<testsuites>' );
          }
          if( index === array.length - 1 ) {
             parts.push( '</testsuites>' );
