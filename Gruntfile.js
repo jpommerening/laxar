@@ -17,6 +17,8 @@ module.exports = function (grunt) {
       docs: ['docs/**/*.md']
    };
 
+   var testDirectories = [];
+
    function karma(lib) {
       var options = {
          files: [
@@ -30,14 +32,36 @@ module.exports = function (grunt) {
             requireConfig: src.require
          },
          junitReporter: {
-            outputFile: 'lib/' + lib + '/junit.xml'
+            outputFile: 'lib/' + lib + '/test/test-results.xml',
+            suite: lib
+         },
+         coverageReporter: {
+            type: 'lcovonly',
+            dir: 'lib/' + lib + '/test'
          },
          proxies: {
          }
       };
 
+      testDirectories.push( 'lib/' + lib + '/test' );
+
       return { options: options };
    }
+
+   grunt.registerTask( 'merge-test-results', function() {
+      var done = this.async();
+      var lcovInfos = grunt.file.expand( testDirectories.map( function( directory ) {
+         return directory + '/PhantomJS */lcov.info';
+      } ) );
+      var testResults = testDirectories.map( function( directory ) {
+         return directory + '/test-results.xml';
+      } );
+
+      grunt.log.ok( 'Merging lcov' );
+      grunt.file.write( 'lcov.info', lcovInfos.map( grunt.file.read ) );
+      grunt.log.ok( 'Merging test results' );
+      grunt.file.write( 'test-results.xml', testResults.map( grunt.file.read ) );
+   } );
 
    grunt.initConfig({
       jshint: {
@@ -55,8 +79,12 @@ module.exports = function (grunt) {
          options: {
             basePath: '.',
             frameworks: ['laxar'],
-            reporters: ['junit', 'progress'],
+            reporters: ['junit', 'progress', 'coverage'],
             browsers: ['PhantomJS'],
+            plugins: [require('karma-coverage')],
+            preprocessors: {
+               'lib/**/*.js': 'coverage'
+            },
             singleRun: true
          },
          event_bus: karma('event_bus'),
@@ -138,6 +166,6 @@ module.exports = function (grunt) {
    grunt.loadNpmTasks('grunt-markdown');
 
    grunt.registerTask('build', []);
-   grunt.registerTask('test', ['karma', 'jshint']);
+   grunt.registerTask('test', ['karma', 'jshint', 'merge-test-results']);
    grunt.registerTask('default', ['build', 'test']);
 };
