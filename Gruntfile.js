@@ -33,7 +33,7 @@ module.exports = function (grunt) {
          },
          junitReporter: {
             outputFile: 'lib/' + lib + '/test/test-results.xml',
-            suite: lib
+            suite: 'lib/' + lib
          },
          coverageReporter: {
             type: 'lcovonly',
@@ -58,9 +58,20 @@ module.exports = function (grunt) {
       } );
 
       grunt.log.ok( 'Merging lcov' );
-      grunt.file.write( 'lcov.info', lcovInfos.map( grunt.file.read ) );
+      grunt.file.write( 'lcov.info', lcovInfos.map( grunt.file.read ).join( '\n' ) );
       grunt.log.ok( 'Merging test results' );
-      grunt.file.write( 'test-results.xml', testResults.map( grunt.file.read ) );
+      grunt.file.write( 'test-results.xml', testResults.map( grunt.file.read ).map( function( text, index, array ) {
+         var parts = text.split( /<[/]?testsuites[>]*>/m );
+         parts.shift();
+         parts.pop();
+         if( index === 0 ) {
+            parts.unshift( '<?xml version="1.0" encoding="utf-8">\n<testsuites>' );
+         }
+         if( index === array.length - 1 ) {
+            parts.push( '</testsuites>' );
+         }
+         return parts.join( '' );
+      } ).join( '' ) );
    } );
 
    grunt.initConfig({
