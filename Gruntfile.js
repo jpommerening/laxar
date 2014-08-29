@@ -17,8 +17,6 @@ module.exports = function (grunt) {
       docs: ['docs/**/*.md']
    };
 
-   var testDirectories = [];
-
    function karma(lib) {
       var options = {
          files: [
@@ -43,36 +41,8 @@ module.exports = function (grunt) {
          }
       };
 
-      testDirectories.push( 'lib/' + lib + '/test' );
-
       return { options: options };
    }
-
-   grunt.registerTask( 'merge-test-results', function() {
-      var done = this.async();
-      var lcovInfos = grunt.file.expand( testDirectories.map( function( directory ) {
-         return directory + '/PhantomJS */lcov.info';
-      } ) );
-      var testResults = testDirectories.map( function( directory ) {
-         return directory + '/test-results.xml';
-      } );
-
-      grunt.log.ok( 'Merging lcov' );
-      grunt.file.write( 'lcov.info', lcovInfos.map( grunt.file.read ).join( '\n' ) );
-      grunt.log.ok( 'Merging test results' );
-      grunt.file.write( 'test-results.xml', testResults.map( grunt.file.read ).map( function( text, index, array ) {
-         var parts = text.split( /<[/]?testsuites[>]*>/m );
-         parts.shift();
-         parts.pop();
-         if( index === 0 ) {
-            parts.unshift( '<?xml version="1.0" encoding="utf-8"?>\n<testsuites>' );
-         }
-         if( index === array.length - 1 ) {
-            parts.push( '</testsuites>' );
-         }
-         return parts.join( '' );
-      } ).join( '' ) );
-   } );
 
    grunt.initConfig({
       jshint: {
@@ -92,7 +62,6 @@ module.exports = function (grunt) {
             frameworks: ['laxar'],
             reporters: ['junit', 'progress', 'coverage'],
             browsers: ['PhantomJS'],
-            plugins: [require('karma-coverage')],
             preprocessors: {
                'lib/**/*.js': 'coverage'
             },
@@ -149,6 +118,18 @@ module.exports = function (grunt) {
             }
          }
       },
+      test_results_merger: {
+         laxar: {
+            src: 'lib/**/test/test-results.xml',
+            dest: 'test-results.xml'
+         }
+      },
+      lcov_info_merger: {
+         laxar: {
+            src: 'lib/**/test/*/lcov.info',
+            dest: 'lcov.info'
+         }
+      },
       watch: {
          gruntfile: {
             files: src.gruntfile,
@@ -177,6 +158,6 @@ module.exports = function (grunt) {
    grunt.loadNpmTasks('grunt-markdown');
 
    grunt.registerTask('build', []);
-   grunt.registerTask('test', ['karma', 'jshint', 'merge-test-results']);
+   grunt.registerTask('test', ['karma', 'jshint', 'test_results_merger', 'lcov_info_merger']);
    grunt.registerTask('default', ['build', 'test']);
 };
