@@ -34,6 +34,46 @@ module.exports = function (grunt) {
       return { options: options };
    }
 
+   var withSauce = !!process.env['SAUCE_USERNAME'];
+   var customLaunchers = {
+      'SauceChrome': {
+         base: 'SauceLabs',
+         browserName: 'chrome',
+         platform: 'Linux',
+         version: '42.0'
+      },
+      'SauceFirefox': {
+         base: 'SauceLabs',
+         browserName: 'firefox',
+         platform: 'Linux',
+         version: '37.0'
+      },
+      'SauceSafari': {
+         base: 'SauceLabs',
+         browserName: 'safari',
+         platform: 'OS X 10.10',
+         version: '8.0'
+      },
+      'SauceIphone': {
+         base: 'SauceLabs',
+         browserName: 'iphone',
+         platform: 'OS X 10.10',
+         version: '8.2'
+      },
+      'SauceIE10': {
+         base: 'SauceLabs',
+         browserName: 'internet explorer',
+         platform: 'Windows 8',
+         version: '10.0'
+      },
+      'SauceIE11': {
+         base: 'SauceLabs',
+         browserName: 'internet explorer',
+         platform: 'Windows 8.1',
+         version: '11.0'
+      }
+   };
+
    grunt.initConfig( {
       jshint: {
          options: {
@@ -50,8 +90,13 @@ module.exports = function (grunt) {
          options: {
             basePath: '.',
             frameworks: ['laxar'],
-            reporters: ['junit', 'coverage', 'progress'],
-            browsers: ['PhantomJS'],
+            reporters: ['junit', 'coverage', 'progress'].concat(withSauce ? ['saucelabs'] : []),
+            plugins: [ require('karma-sauce-launcher') ],
+            sauceLabs: {
+               testName: 'LaxarJS unit tests'
+            },
+            customLaunchers: customLaunchers,
+            browsers: withSauce ? ['SauceChrome', 'SauceFirefox', 'SauceIE10'] : ['PhantomJS'],
             singleRun: true,
             preprocessors: {
                'lib/**/*.js': 'coverage'
